@@ -1,0 +1,6 @@
+{
+  "name": "Missão CFO MA",
+  "description": "Plataforma completa de preparação para o CFO PMMA (UEMA/PAES) com Modo Aula, Modo Rápido, Constância, Revisão Espaçada, Simulados, Redação e Tutor IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

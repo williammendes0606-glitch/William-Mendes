@@ -1,0 +1,417 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isValidStringList(listVal, maxItems) {
+      return listVal is list && listVal.size() <= maxItems && (listVal.size() == 0 || listVal[0] is string);
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.userId is string && data.userId == userId &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+        data.dailyGoalMinutes is int && data.dailyGoalMinutes >= 5 && data.dailyGoalMinutes <= 360 &&
+        data.weeklyGoalDays is int && data.weeklyGoalDays >= 1 && data.weeklyGoalDays <= 7 &&
+        data.workSchedule in ['COMERCIAL', 'ESCALA_12X36', 'NOTURNO', 'TEMPO_INTEGRAL'] &&
+        data.fatigueLevel in ['DISPOSTO', 'MODERADO', 'CANSADO', 'EXAUSTO'] &&
+        data.sleepHours is int && data.sleepHours >= 0 && data.sleepHours <= 16 &&
+        data.xp is int && data.xp >= 0 &&
+        data.level is int && data.level >= 1 &&
+        data.streakDays is int && data.streakDays >= 0 &&
+        data.lastStudyDay is string && data.lastStudyDay.size() <= 20 &&
+        data.totalStudyMinutes is int && data.totalStudyMinutes >= 0 &&
+        data.totalQuestionsAnswered is int && data.totalQuestionsAnswered >= 0 &&
+        data.totalQuestionsCorrect is int && data.totalQuestionsCorrect >= 0 &&
+        data.soundEnabled is bool &&
+        (data.soundVolume is float || data.soundVolume is int) && data.soundVolume >= 0.0 && data.soundVolume <= 1.0 &&
+        data.diagnosticCompleted is bool &&
+        isValidStringList(data.focusSubjects, 15);
+    }
+
+    function isValidLessonProgress(data, userId) {
+      return data.userId is string && data.userId == userId &&
+        data.lessonId is string && data.lessonId.size() >= 1 && data.lessonId.size() <= 128 &&
+        data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 64 &&
+        data.completed is bool &&
+        data.currentStage is int && data.currentStage >= 0 && data.currentStage <= 10 &&
+        data.finalScorePercent is int && data.finalScorePercent >= 0 && data.finalScorePercent <= 100 &&
+        data.minutesSpent is int && data.minutesSpent >= 0 && data.minutesSpent <= 600;
+    }
+
+    function isValidErrorEntry(data, userId) {
+      return data.userId is string && data.userId == userId &&
+        data.questionId is string && data.questionId.size() >= 1 && data.questionId.size() <= 128 &&
+        data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 64 &&
+        data.subjectName is string && data.subjectName.size() >= 1 && data.subjectName.size() <= 80 &&
+        data.topicName is string && data.topicName.size() >= 1 && data.topicName.size() <= 120 &&
+        data.statement is string && data.statement.size() >= 1 && data.statement.size() <= 4000 &&
+        isValidStringList(data.options, 5) && data.options.size() >= 2 &&
+        data.chosenIndex is int && data.chosenIndex >= 0 && data.chosenIndex <= 4 &&
+        data.correctIndex is int && data.correctIndex >= 0 && data.correctIndex <= 4 &&
+        data.explanation is string && data.explanation.size() >= 1 && data.explanation.size() <= 4000 &&
+        data.sourceLabel is string && data.sourceLabel.size() >= 1 && data.sourceLabel.size() <= 120 &&
+        data.retryCount is int && data.retryCount >= 0 && data.retryCount <= 1000 &&
+        data.mastered is bool &&
+        data.recordedAtMillis is int && data.recordedAtMillis >= 0;
+    }
+
+    function isValidReviewItem(data, userId) {
+      return data.userId is string && data.userId == userId &&
+        data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 64 &&
+        data.topicId is string && data.topicId.size() >= 1 && data.topicId.size() <= 128 &&
+        data.topicTitle is string && data.topicTitle.size() >= 1 && data.topicTitle.size() <= 160 &&
+        data.itemType in ['TOPICO', 'QUESTAO', 'FLASHCARD'] &&
+        data.referenceId is string && data.referenceId.size() >= 1 && data.referenceId.size() <= 128 &&
+        data.stageIndex is int && data.stageIndex >= 0 && data.stageIndex <= 5 &&
+        data.consecutiveHits is int && data.consecutiveHits >= 0 && data.consecutiveHits <= 1000 &&
+        data.errorCount is int && data.errorCount >= 0 && data.errorCount <= 1000 &&
+        data.nextReviewAtMillis is int && data.nextReviewAtMillis >= 0 &&
+        data.lastReviewedAtMillis is int && data.lastReviewedAtMillis >= 0 &&
+        data.masteryStatus in ['REFORCO', 'EM_ANDAMENTO', 'DOMINADO'];
+    }
+
+    function isValidFlashcard(data, userId) {
+      return data.userId is string && data.userId == userId &&
+        data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 64 &&
+        data.topicTitle is string && data.topicTitle.size() >= 1 && data.topicTitle.size() <= 160 &&
+        data.front is string && data.front.size() >= 1 && data.front.size() <= 1500 &&
+        data.back is string && data.back.size() >= 1 && data.back.size() <= 2500 &&
+        data.memoryTip is string && data.memoryTip.size() <= 1000 &&
+        data.confidence in ['NAO_SEI', 'TENHO_DUVIDA', 'SEI_RESPONDER'] &&
+        data.nextReviewAtMillis is int && data.nextReviewAtMillis >= 0 &&
+        data.reviewCount is int && data.reviewCount >= 0 && data.reviewCount <= 10000 &&
+        data.customCreated is bool;
+    }
+
+    function isValidSimulatedExam(data, userId) {
+      return data.userId is string && data.userId == userId &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+        data.mode in ['DISCIPLINA', 'ASSUNTO', 'MISTO', 'COMPLETO'] &&
+        data.subjectId is string && data.subjectId.size() <= 64 &&
+        data.totalQuestions is int && data.totalQuestions >= 1 && data.totalQuestions <= 200 &&
+        data.correctCount is int && data.correctCount >= 0 && data.correctCount <= 200 &&
+        data.scorePercent is int && data.scorePercent >= 0 && data.scorePercent <= 100 &&
+        data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 36000 &&
+        data.completedAtMillis is int && data.completedAtMillis >= 0 &&
+        data.breakdownSummary is string && data.breakdownSummary.size() <= 4000;
+    }
+
+    function isValidEssay(data, userId) {
+      return data.userId is string && data.userId == userId &&
+        data.themeTitle is string && data.themeTitle.size() >= 1 && data.themeTitle.size() <= 300 &&
+        data.draftText is string && data.draftText.size() >= 1 && data.draftText.size() <= 15000 &&
+        data.rewrittenText is string && data.rewrittenText.size() <= 15000 &&
+        isValidStringList(data.grammarErrors, 30) &&
+        data.cohesionFeedback is string && data.cohesionFeedback.size() <= 4000 &&
+        isValidStringList(data.improvementSuggestions, 20) &&
+        data.formativeScore is int && data.formativeScore >= 0 && data.formativeScore <= 1000 &&
+        data.aiSummary is string && data.aiSummary.size() <= 5000;
+    }
+
+    function isValidDiagnostic(data, userId) {
+      return data.userId is string && data.userId == userId &&
+        data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 64 &&
+        data.subjectName is string && data.subjectName.size() >= 1 && data.subjectName.size() <= 80 &&
+        data.totalQuestions is int && data.totalQuestions >= 1 && data.totalQuestions <= 50 &&
+        data.correctCount is int && data.correctCount >= 0 && data.correctCount <= 50 &&
+        data.accuracyPercent is int && data.accuracyPercent >= 0 && data.accuracyPercent <= 100 &&
+        isValidStringList(data.strengths, 20) &&
+        isValidStringList(data.weaknesses, 20) &&
+        isValidStringList(data.unknownTopics, 20) &&
+        data.needsReview is bool;
+    }
+
+    function isValidQuestionLog(data, userId) {
+      return data.userId is string && data.userId == userId &&
+        data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 64 &&
+        data.topicId is string && data.topicId.size() >= 1 && data.topicId.size() <= 128 &&
+        data.questionId is string && data.questionId.size() >= 1 && data.questionId.size() <= 128 &&
+        data.mode in ['AULA', 'RAPIDO', 'CONSTANCIA', 'REVISAO', 'SIMULADO', 'DIAGNOSTICO', 'CADERNO_ERROS'] &&
+        data.correct is bool &&
+        data.dayKey is string && data.dayKey.size() >= 8 && data.dayKey.size() <= 20 &&
+        data.minutesSpent is int && data.minutesSpent >= 0 && data.minutesSpent <= 300;
+    }
+
+    function isValidAchievement(data, userId) {
+      return data.userId is string && data.userId == userId &&
+        data.badgeId is string && data.badgeId.size() >= 1 && data.badgeId.size() <= 64 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+        data.description is string && data.description.size() >= 1 && data.description.size() <= 300 &&
+        data.xpBonus is int && data.xpBonus >= 0 && data.xpBonus <= 5000 &&
+        data.unlockedAtMillis is int && data.unlockedAtMillis >= 0;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(userId) &&
+        incoming().keys().hasAll([
+          'userId', 'displayName', 'dailyGoalMinutes', 'weeklyGoalDays',
+          'workSchedule', 'fatigueLevel', 'sleepHours', 'xp', 'level',
+          'streakDays', 'lastStudyDay', 'totalStudyMinutes',
+          'totalQuestionsAnswered', 'totalQuestionsCorrect',
+          'soundEnabled', 'soundVolume', 'diagnosticCompleted', 'focusSubjects',
+          'createdAt', 'updatedAt'
+        ]) &&
+        incoming().keys().hasOnly([
+          'userId', 'displayName', 'dailyGoalMinutes', 'weeklyGoalDays',
+          'workSchedule', 'fatigueLevel', 'sleepHours', 'xp', 'level',
+          'streakDays', 'lastStudyDay', 'totalStudyMinutes',
+          'totalQuestionsAnswered', 'totalQuestionsCorrect',
+          'soundEnabled', 'soundVolume', 'diagnosticCompleted', 'focusSubjects',
+          'createdAt', 'updatedAt'
+        ]) &&
+        isValidTimestamp(incoming().createdAt) &&
+        isValidTimestamp(incoming().updatedAt) &&
+        isValidUserProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) && isValidId(userId) &&
+        isValidUserProfile(incoming(), userId) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        isValidTimestamp(incoming().updatedAt) &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'dailyGoalMinutes', 'weeklyGoalDays',
+          'workSchedule', 'fatigueLevel', 'sleepHours', 'xp', 'level',
+          'streakDays', 'lastStudyDay', 'totalStudyMinutes',
+          'totalQuestionsAnswered', 'totalQuestionsCorrect',
+          'soundEnabled', 'soundVolume', 'diagnosticCompleted', 'focusSubjects',
+          'updatedAt'
+        ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /lessonProgress/{lessonId} {
+        allow get: if isOwner(userId) && isValidId(lessonId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(lessonId) &&
+          incoming().keys().hasAll(['userId', 'lessonId', 'subjectId', 'completed', 'currentStage', 'finalScorePercent', 'minutesSpent', 'createdAt', 'updatedAt']) &&
+          incoming().keys().hasOnly(['userId', 'lessonId', 'subjectId', 'completed', 'currentStage', 'finalScorePercent', 'minutesSpent', 'createdAt', 'updatedAt']) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt) &&
+          isValidLessonProgress(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(lessonId) &&
+          isValidLessonProgress(incoming(), userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidTimestamp(incoming().updatedAt) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'currentStage', 'finalScorePercent', 'minutesSpent', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(lessonId);
+      }
+
+      match /errorNotebook/{errorId} {
+        allow get: if isOwner(userId) && isValidId(errorId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(errorId) &&
+          incoming().keys().hasAll([
+            'userId', 'questionId', 'subjectId', 'subjectName', 'topicName',
+            'statement', 'options', 'chosenIndex', 'correctIndex', 'explanation',
+            'sourceLabel', 'retryCount', 'mastered', 'recordedAtMillis', 'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'questionId', 'subjectId', 'subjectName', 'topicName',
+            'statement', 'options', 'chosenIndex', 'correctIndex', 'explanation',
+            'sourceLabel', 'retryCount', 'mastered', 'recordedAtMillis', 'createdAt', 'updatedAt'
+          ]) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt) &&
+          isValidErrorEntry(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(errorId) &&
+          isValidErrorEntry(incoming(), userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidTimestamp(incoming().updatedAt) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['chosenIndex', 'retryCount', 'mastered', 'recordedAtMillis', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(errorId);
+      }
+
+      match /reviewItems/{itemId} {
+        allow get: if isOwner(userId) && isValidId(itemId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(itemId) &&
+          incoming().keys().hasAll([
+            'userId', 'subjectId', 'topicId', 'topicTitle', 'itemType', 'referenceId',
+            'stageIndex', 'consecutiveHits', 'errorCount', 'nextReviewAtMillis',
+            'lastReviewedAtMillis', 'masteryStatus', 'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'subjectId', 'topicId', 'topicTitle', 'itemType', 'referenceId',
+            'stageIndex', 'consecutiveHits', 'errorCount', 'nextReviewAtMillis',
+            'lastReviewedAtMillis', 'masteryStatus', 'createdAt', 'updatedAt'
+          ]) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt) &&
+          isValidReviewItem(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(itemId) &&
+          isValidReviewItem(incoming(), userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidTimestamp(incoming().updatedAt) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['stageIndex', 'consecutiveHits', 'errorCount', 'nextReviewAtMillis', 'lastReviewedAtMillis', 'masteryStatus', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(itemId);
+      }
+
+      match /flashcards/{cardId} {
+        allow get: if isOwner(userId) && isValidId(cardId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(cardId) &&
+          incoming().keys().hasAll([
+            'userId', 'subjectId', 'topicTitle', 'front', 'back', 'memoryTip',
+            'confidence', 'nextReviewAtMillis', 'reviewCount', 'customCreated', 'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'subjectId', 'topicTitle', 'front', 'back', 'memoryTip',
+            'confidence', 'nextReviewAtMillis', 'reviewCount', 'customCreated', 'createdAt', 'updatedAt'
+          ]) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt) &&
+          isValidFlashcard(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(cardId) &&
+          isValidFlashcard(incoming(), userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidTimestamp(incoming().updatedAt) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['confidence', 'nextReviewAtMillis', 'reviewCount', 'front', 'back', 'memoryTip', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(cardId);
+      }
+
+      match /simulatedExams/{examId} {
+        allow get: if isOwner(userId) && isValidId(examId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(examId) &&
+          incoming().keys().hasAll([
+            'userId', 'title', 'mode', 'subjectId', 'totalQuestions', 'correctCount',
+            'scorePercent', 'durationSeconds', 'completedAtMillis', 'breakdownSummary', 'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'title', 'mode', 'subjectId', 'totalQuestions', 'correctCount',
+            'scorePercent', 'durationSeconds', 'completedAtMillis', 'breakdownSummary', 'createdAt', 'updatedAt'
+          ]) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt) &&
+          isValidSimulatedExam(incoming(), userId);
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(examId);
+      }
+
+      match /essays/{essayId} {
+        allow get: if isOwner(userId) && isValidId(essayId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(essayId) &&
+          incoming().keys().hasAll([
+            'userId', 'themeTitle', 'draftText', 'rewrittenText', 'grammarErrors',
+            'cohesionFeedback', 'improvementSuggestions', 'formativeScore', 'aiSummary',
+            'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'themeTitle', 'draftText', 'rewrittenText', 'grammarErrors',
+            'cohesionFeedback', 'improvementSuggestions', 'formativeScore', 'aiSummary',
+            'createdAt', 'updatedAt'
+          ]) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt) &&
+          isValidEssay(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(essayId) &&
+          isValidEssay(incoming(), userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidTimestamp(incoming().updatedAt) &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'draftText', 'rewrittenText', 'grammarErrors', 'cohesionFeedback',
+            'improvementSuggestions', 'formativeScore', 'aiSummary', 'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(essayId);
+      }
+
+      match /diagnosticResults/{subjectId} {
+        allow get: if isOwner(userId) && isValidId(subjectId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(subjectId) &&
+          incoming().keys().hasAll([
+            'userId', 'subjectId', 'subjectName', 'totalQuestions', 'correctCount',
+            'accuracyPercent', 'strengths', 'weaknesses', 'unknownTopics', 'needsReview',
+            'createdAt', 'updatedAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'subjectId', 'subjectName', 'totalQuestions', 'correctCount',
+            'accuracyPercent', 'strengths', 'weaknesses', 'unknownTopics', 'needsReview',
+            'createdAt', 'updatedAt'
+          ]) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt) &&
+          isValidDiagnostic(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(subjectId) &&
+          isValidDiagnostic(incoming(), userId) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidTimestamp(incoming().updatedAt) &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'totalQuestions', 'correctCount', 'accuracyPercent', 'strengths',
+            'weaknesses', 'unknownTopics', 'needsReview', 'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(subjectId);
+      }
+
+      match /questionLogs/{logId} {
+        allow get: if isOwner(userId) && isValidId(logId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(logId) &&
+          incoming().keys().hasAll([
+            'userId', 'subjectId', 'topicId', 'questionId', 'mode',
+            'correct', 'dayKey', 'minutesSpent', 'createdAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'subjectId', 'topicId', 'questionId', 'mode',
+            'correct', 'dayKey', 'minutesSpent', 'createdAt'
+          ]) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidQuestionLog(incoming(), userId);
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(logId);
+      }
+
+      match /achievements/{badgeId} {
+        allow get: if isOwner(userId) && isValidId(badgeId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(badgeId) &&
+          incoming().keys().hasAll([
+            'userId', 'badgeId', 'title', 'description', 'xpBonus', 'unlockedAtMillis', 'createdAt'
+          ]) &&
+          incoming().keys().hasOnly([
+            'userId', 'badgeId', 'title', 'description', 'xpBonus', 'unlockedAtMillis', 'createdAt'
+          ]) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidAchievement(incoming(), userId);
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(badgeId);
+      }
+    }
+  }
+}

@@ -1,0 +1,277 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Candidate profile, study plan, energy state, gamification, and audio settings.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "dailyGoalMinutes": { "type": "integer" },
+        "weeklyGoalDays": { "type": "integer" },
+        "workSchedule": { "type": "string", "enum": ["COMERCIAL", "ESCALA_12X36", "NOTURNO", "TEMPO_INTEGRAL"] },
+        "fatigueLevel": { "type": "string", "enum": ["DISPOSTO", "MODERADO", "CANSADO", "EXAUSTO"] },
+        "sleepHours": { "type": "integer" },
+        "xp": { "type": "integer" },
+        "level": { "type": "integer" },
+        "streakDays": { "type": "integer" },
+        "lastStudyDay": { "type": "string" },
+        "totalStudyMinutes": { "type": "integer" },
+        "totalQuestionsAnswered": { "type": "integer" },
+        "totalQuestionsCorrect": { "type": "integer" },
+        "soundEnabled": { "type": "boolean" },
+        "soundVolume": { "type": "number" },
+        "diagnosticCompleted": { "type": "boolean" },
+        "focusSubjects": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Must be FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Must be FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "userId", "displayName", "dailyGoalMinutes", "weeklyGoalDays",
+        "workSchedule", "fatigueLevel", "sleepHours", "xp", "level",
+        "streakDays", "lastStudyDay", "totalStudyMinutes",
+        "totalQuestionsAnswered", "totalQuestionsCorrect",
+        "soundEnabled", "soundVolume", "diagnosticCompleted", "focusSubjects",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "LessonProgressRecord": {
+      "title": "LessonProgressRecord",
+      "description": "Completion and final quiz score for a CFO MA lesson.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "lessonId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "currentStage": { "type": "integer" },
+        "finalScorePercent": { "type": "integer" },
+        "minutesSpent": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "lessonId", "subjectId", "completed", "currentStage", "finalScorePercent", "minutesSpent", "createdAt", "updatedAt"]
+    },
+    "ErrorNotebookEntry": {
+      "title": "ErrorNotebookEntry",
+      "description": "Automatically captured wrong answer with explanation and mastery tracking.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "questionId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "topicName": { "type": "string" },
+        "statement": { "type": "string" },
+        "options": { "type": "array" },
+        "chosenIndex": { "type": "integer" },
+        "correctIndex": { "type": "integer" },
+        "explanation": { "type": "string" },
+        "sourceLabel": { "type": "string" },
+        "retryCount": { "type": "integer" },
+        "mastered": { "type": "boolean" },
+        "recordedAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "questionId", "subjectId", "subjectName", "topicName",
+        "statement", "options", "chosenIndex", "correctIndex", "explanation",
+        "sourceLabel", "retryCount", "mastered", "recordedAtMillis", "createdAt", "updatedAt"
+      ]
+    },
+    "SpacedReviewItem": {
+      "title": "SpacedReviewItem",
+      "description": "Spaced repetition schedule item (same day, 1d, 2d, 7d, 15d, 30d).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "topicId": { "type": "string" },
+        "topicTitle": { "type": "string" },
+        "itemType": { "type": "string", "enum": ["TOPICO", "QUESTAO", "FLASHCARD"] },
+        "referenceId": { "type": "string" },
+        "stageIndex": { "type": "integer" },
+        "consecutiveHits": { "type": "integer" },
+        "errorCount": { "type": "integer" },
+        "nextReviewAtMillis": { "type": "integer" },
+        "lastReviewedAtMillis": { "type": "integer" },
+        "masteryStatus": { "type": "string", "enum": ["REFORCO", "EM_ANDAMENTO", "DOMINADO"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "subjectId", "topicId", "topicTitle", "itemType", "referenceId",
+        "stageIndex", "consecutiveHits", "errorCount", "nextReviewAtMillis",
+        "lastReviewedAtMillis", "masteryStatus", "createdAt", "updatedAt"
+      ]
+    },
+    "FlashcardProgress": {
+      "title": "FlashcardProgress",
+      "description": "Flashcard confidence rating and adaptive repetition schedule.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "topicTitle": { "type": "string" },
+        "front": { "type": "string" },
+        "back": { "type": "string" },
+        "memoryTip": { "type": "string" },
+        "confidence": { "type": "string", "enum": ["NAO_SEI", "TENHO_DUVIDA", "SEI_RESPONDER"] },
+        "nextReviewAtMillis": { "type": "integer" },
+        "reviewCount": { "type": "integer" },
+        "customCreated": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "subjectId", "topicTitle", "front", "back", "memoryTip",
+        "confidence", "nextReviewAtMillis", "reviewCount", "customCreated", "createdAt", "updatedAt"
+      ]
+    },
+    "SimulatedExamRecord": {
+      "title": "SimulatedExamRecord",
+      "description": "Completed simulated exam history and accuracy metrics.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "mode": { "type": "string", "enum": ["DISCIPLINA", "ASSUNTO", "MISTO", "COMPLETO"] },
+        "subjectId": { "type": "string" },
+        "totalQuestions": { "type": "integer" },
+        "correctCount": { "type": "integer" },
+        "scorePercent": { "type": "integer" },
+        "durationSeconds": { "type": "integer" },
+        "completedAtMillis": { "type": "integer" },
+        "breakdownSummary": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "title", "mode", "subjectId", "totalQuestions", "correctCount",
+        "scorePercent", "durationSeconds", "completedAtMillis", "breakdownSummary", "createdAt", "updatedAt"
+      ]
+    },
+    "EssayRecord": {
+      "title": "EssayRecord",
+      "description": "Candidate essay draft, rewritten version, and AI formative evaluation.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "themeTitle": { "type": "string" },
+        "draftText": { "type": "string" },
+        "rewrittenText": { "type": "string" },
+        "grammarErrors": { "type": "array" },
+        "cohesionFeedback": { "type": "string" },
+        "improvementSuggestions": { "type": "array" },
+        "formativeScore": { "type": "integer" },
+        "aiSummary": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "themeTitle", "draftText", "rewrittenText", "grammarErrors",
+        "cohesionFeedback", "improvementSuggestions", "formativeScore", "aiSummary",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "DiagnosticSubjectResult": {
+      "title": "DiagnosticSubjectResult",
+      "description": "Initial diagnostic assessment per subject.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "totalQuestions": { "type": "integer" },
+        "correctCount": { "type": "integer" },
+        "accuracyPercent": { "type": "integer" },
+        "strengths": { "type": "array" },
+        "weaknesses": { "type": "array" },
+        "unknownTopics": { "type": "array" },
+        "needsReview": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "subjectId", "subjectName", "totalQuestions", "correctCount",
+        "accuracyPercent", "strengths", "weaknesses", "unknownTopics", "needsReview",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "QuestionAttemptLog": {
+      "title": "QuestionAttemptLog",
+      "description": "Immutable log of answered questions for weekly/monthly analytics.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "topicId": { "type": "string" },
+        "questionId": { "type": "string" },
+        "mode": { "type": "string", "enum": ["AULA", "RAPIDO", "CONSTANCIA", "REVISAO", "SIMULADO", "DIAGNOSTICO", "CADERNO_ERROS"] },
+        "correct": { "type": "boolean" },
+        "dayKey": { "type": "string" },
+        "minutesSpent": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "subjectId", "topicId", "questionId", "mode", "correct", "dayKey", "minutesSpent", "createdAt"]
+    },
+    "UnlockedAchievement": {
+      "title": "UnlockedAchievement",
+      "description": "Earned badge or milestone unlocked by completing real study activities.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "badgeId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "xpBonus": { "type": "integer" },
+        "unlockedAtMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "badgeId", "title", "description", "xpBonus", "unlockedAtMillis", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Candidate profile, settings, and overall progress."
+    },
+    "/users/{userId}/lessonProgress/{lessonId}": {
+      "schema": { "$ref": "#/entities/LessonProgressRecord" },
+      "description": "Per-lesson progress and quiz completion."
+    },
+    "/users/{userId}/errorNotebook/{errorId}": {
+      "schema": { "$ref": "#/entities/ErrorNotebookEntry" },
+      "description": "Candidate error notebook entries."
+    },
+    "/users/{userId}/reviewItems/{itemId}": {
+      "schema": { "$ref": "#/entities/SpacedReviewItem" },
+      "description": "Spaced repetition review items."
+    },
+    "/users/{userId}/flashcards/{cardId}": {
+      "schema": { "$ref": "#/entities/FlashcardProgress" },
+      "description": "Flashcard decks and confidence tracking."
+    },
+    "/users/{userId}/simulatedExams/{examId}": {
+      "schema": { "$ref": "#/entities/SimulatedExamRecord" },
+      "description": "Simulated exam history."
+    },
+    "/users/{userId}/essays/{essayId}": {
+      "schema": { "$ref": "#/entities/EssayRecord" },
+      "description": "Essays and AI feedback history."
+    },
+    "/users/{userId}/diagnosticResults/{subjectId}": {
+      "schema": { "$ref": "#/entities/DiagnosticSubjectResult" },
+      "description": "Initial diagnostic assessment per subject."
+    },
+    "/users/{userId}/questionLogs/{logId}": {
+      "schema": { "$ref": "#/entities/QuestionAttemptLog" },
+      "description": "Question attempt logs for statistics."
+    },
+    "/users/{userId}/achievements/{badgeId}": {
+      "schema": { "$ref": "#/entities/UnlockedAchievement" },
+      "description": "Unlocked badges and achievements."
+    }
+  }
+}
